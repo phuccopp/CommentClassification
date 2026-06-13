@@ -53,27 +53,32 @@ print("Device:", device)
 
 def predict_batch(
     texts,
-    threshold=0.5,
-    batch_size=32
+    threshold=0.2,
+    batch_size=32,
+    progress_callback=None
 ):
-    """
-    texts: list[str]
-
-    return:
-    [
-        ["design_positive"],
-        ["experience_negative"],
-        ...
-    ]
-    """
 
     all_results = []
 
+    total = len(texts)
+
     for i in range(
         0,
-        len(texts),
+        total,
         batch_size
     ):
+
+        if progress_callback:
+
+            done = min(
+                i,
+                total
+            )
+
+            progress_callback(
+                done,
+                total
+            )
 
         batch_texts = texts[
             i:i+batch_size
@@ -94,7 +99,9 @@ def predict_batch(
 
         with torch.no_grad():
 
-            outputs = model(**inputs)
+            outputs = model(
+                **inputs
+            )
 
             probs = torch.sigmoid(
                 outputs.logits
@@ -111,6 +118,13 @@ def predict_batch(
             all_results.append(
                 labels
             )
+
+    if progress_callback:
+
+        progress_callback(
+            total,
+            total
+        )
 
     return all_results
 
