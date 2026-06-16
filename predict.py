@@ -140,21 +140,3 @@ def predict(text):
 
     return result[0]
 
-# ==========================================================
-# TEST
-# ==========================================================
-
-if __name__ == "__main__":
-
-    while True:
-
-        text = input(
-            "\nNhập comment: "
-        )
-
-        labels = predict(text)
-
-        print(
-            "Prediction:",
-            labels
-        )

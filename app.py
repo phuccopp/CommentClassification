@@ -37,7 +37,7 @@ selected = st.sidebar.selectbox(
 # HEADER
 # =========================
 
-st.title(" YouTube Comment Analyzer")
+st.title("Phân loại bình luận trong video review sản phẩm công nghệ")
 
 url = st.text_input(
     "YouTube URL",
@@ -48,7 +48,7 @@ url = st.text_input(
 # RUN
 # =========================
 
-if st.button("🚀 Phân tích", use_container_width=True):
+if st.button("🚀 Phân tích", width="stretch"):
 
     progress_bar = st.progress(0)
     status_box = st.empty()
@@ -75,7 +75,7 @@ if st.button("🚀 Phân tích", use_container_width=True):
 
     with col1:
         if result["thumbnail"]:
-            st.image(result["thumbnail"], use_container_width=True)
+            st.image(result["thumbnail"], width="stretch")
 
     with col2:
         st.markdown(f"# **{result['title']}**")
@@ -107,12 +107,10 @@ if st.button("🚀 Phân tích", use_container_width=True):
             f.read(),
             "youtube_comments.csv",
             "text/csv",
-            use_container_width=True
+            width="stretch"
         )
 
-    # =========================
-    # 🔥 BẢNG 7 NHÃN (PHẦN BẠN BỊ MẤT)
-    # =========================
+    
 
     st.subheader(" Số lượng theo nhãn")
 
@@ -137,7 +135,7 @@ if st.button("🚀 Phân tích", use_container_width=True):
 
     st.dataframe(
         df_summary,
-        use_container_width=True
+        width="stretch"
     )
 
     # =========================
@@ -149,9 +147,9 @@ if st.button("🚀 Phân tích", use_container_width=True):
     st.subheader("Kết quả mẫu")
 
     st.dataframe(
-        result["sample_df"],
-        use_container_width=True,
-        height=400
+    result["sample_df"],
+    width="stretch",
+    height=400
     )
 
     # =========================
@@ -193,3 +191,95 @@ if st.button("🚀 Phân tích", use_container_width=True):
         )
 
         st.pyplot(fig2)
+    # ==========================================
+    # GEMINI REPORT
+    # ==========================================
+
+    st.markdown("---")
+
+    st.subheader(
+        "🧠 Đánh giá sản phẩm bằng Gemini"
+    )
+
+    with st.spinner(
+        "Gemini đang phân tích..."
+    ):
+
+        from gemini import (
+            analyze_product
+        )
+
+        label_samples = {
+            "design_negative": [],
+            "design_neutral": [],
+            "design_positive": [],
+            "experience_negative": [],
+            "experience_neutral": [],
+            "experience_positive": [],
+            "irrelevant": []
+        }
+
+        for comment, labels in zip(
+            result["comments"],
+            result["predictions"]
+        ):
+
+            if not labels:
+
+                if len(
+                    label_samples["irrelevant"]
+                ) < 10:
+
+                    label_samples[
+                        "irrelevant"
+                    ].append(comment)
+
+                continue
+
+            for label in labels:
+
+                if (
+                    label in label_samples
+                    and len(
+                        label_samples[label]
+                    ) < 10
+                ):
+
+                    label_samples[
+                        label
+                    ].append(comment)
+
+        formatted_comments = ""
+
+        for label, cmts in (
+            label_samples.items()
+        ):
+
+            formatted_comments += (
+                f"\n\n===== {label.upper()} =====\n"
+            )
+
+            for i, cmt in enumerate(
+                cmts,
+                start=1
+            ):
+
+                formatted_comments += (
+                    f"{i}. {cmt}\n"
+                )
+
+        report = analyze_product(
+            title=result["title"],
+            detail_counter=result[
+                "detail_counter"
+            ],
+            overview_counter=result[
+                "overview_counter"
+            ],
+            sample_comments=formatted_comments
+        )
+
+        st.markdown(report)
+
+    
+    
